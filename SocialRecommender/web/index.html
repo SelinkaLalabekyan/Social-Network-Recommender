@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Social Graph Intelligence</title>
+
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+#status {
+    margin-top: 12px;
+}
+
+body {
+    font-family: Arial;
+    background:#0b132b;
+    color:#e2e8f0;
+    padding:20px;
+}
+
+body.light {
+    background:#f5f6fa;
+    color:#111;
+}
+
+.top {
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+}
+
+.centerUpload {
+    text-align:center;
+    flex:1;
+}
+
+#network {
+    height:650px;
+    margin-top:20px;
+    background:#020617;
+    border:1px solid #1e293b;
+}
+
+body.light #network {
+    background:#fff;
+}
+
+input,button {
+    padding:8px;
+    margin:4px;
+}
+
+button, .uploadBtn {
+    background:#1e293b;
+    color:white;
+    border:1px solid #334155;
+    cursor:pointer;
+}
+
+body.light button,
+body.light .uploadBtn {
+    background:#ddd;
+    color:black;
+}
+
+#fileInput {
+    display:none;
+}
+
+.uploadBtn {
+    display:inline-block;
+    padding:8px 14px;
+}
+
+table {
+    border-collapse:collapse;
+    width:100%;
+}
+
+td,th {
+    border:1px solid #334155;
+    padding:6px;
+}
+
+.tableWrap{
+    max-height:220px;
+    overflow-y:auto;
+    overflow-x:hidden;
+    border:1px solid #334155;
+    margin-top:10px;
+}
+
+.tableWrap::-webkit-scrollbar {
+    width:8px;
+}
+.tableWrap::-webkit-scrollbar-track {
+    background:#020617;
+}
+.tableWrap::-webkit-scrollbar-thumb {
+    background:#334155;
+    border-radius:6px;
+}
+.tableWrap::-webkit-scrollbar-thumb:hover {
+    background:#475569;
+}
+
+body.light .tableWrap::-webkit-scrollbar-track {
+    background:#eee;
+}
+body.light .tableWrap::-webkit-scrollbar-thumb {
+    background:#bbb;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🌐 Social Graph Intelligence</h2>
+
+<div class="top">
+
+<div>
+<input id="search" placeholder="Enter user..."/>
+<button onclick="searchUser()">Search</button>
+<div id="selectedUser"></div>
+<div id="result"></div>
+</div>
+
+<div class="centerUpload">
+<label class="uploadBtn">
+    Upload CSV
+    <input type="file" id="fileInput">
+</label>
+<br>
+<div id="status">Load CSV first</div>
+</div>
+
+<div>
+<button onclick="toggleTheme()">🌙 / ☀️</button>
+<canvas id="chart" width="250"></canvas>
+</div>
+
+</div>
+
+<div id="network"></div>
+
+<script>
+
+let graph = {};
+let nodesDS, edgesDS, network;
+
+// ✅ САПФИРОВО-ЛАЗУРНАЯ БАЗА + ГРУППЫ
+function getColor(name){
+    if(name.includes("dev")) return "#5c7cfa";
+    if(name.includes("design")) return "#e64980";
+    if(name.includes("crypto")) return "#b58924";
+    if(name.includes("ai")||name.includes("data")) return "#20c997";
+    return "#26609e"; // 🔥 sapphire mix
+}
+
+function toggleTheme(){
+    document.body.classList.toggle("light");
+}
+
+// LOAD CSV
+document.getElementById("fileInput").addEventListener("change", e=>{
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(evt){
+
+        const lines = evt.target.result.split("\n");
+
+        graph={};
+        const edgeMap = new Map();
+
+        lines.forEach(l=>{
+            if(!l.trim()) return;
+
+            const [a,b] = l.split(",");
+
+            if(!graph[a]) graph[a]=new Set();
+            if(!graph[b]) graph[b]=new Set();
+
+            graph[a].add(b);
+            graph[b].add(a);
+
+            const key=[a,b].sort().join("-");
+            edgeMap.set(key,{from:a,to:b});
+        });
+
+        const nodes = Object.keys(graph).map(n=>({
+            id:n,
+            label:n,
+            value:graph[n].size * 5,
+            font:{color:"#e2e8f0"},
+            color:getColor(n)
+        }));
+
+        const edges = Array.from(edgeMap.values()).map(e=>({
+            ...e,
+            color:{color:"#1f2937"},
+            width:1
+        }));
+
+        nodesDS = new vis.DataSet(nodes);
+        edgesDS = new vis.DataSet(edges);
+
+        network = new vis.Network(
+            document.getElementById("network"),
+            {nodes:nodesDS, edges:edgesDS},
+            {
+                physics:{
+                    enabled:true,
+                    solver:"barnesHut",
+                    barnesHut:{
+                        gravitationalConstant:-3000,
+                        centralGravity:0.2,
+                        springLength:120,
+                        springConstant:0.04,
+                        damping:0.09,
+                        avoidOverlap:0.3
+                    },
+                    stabilization:{
+                        enabled:true,
+                        iterations:300
+                    }
+                },
+                interaction:{hover:true},
+                nodes:{shape:"dot", scaling:{min:6,max:28}},
+                edges:{smooth:{type:"dynamic"}}
+            }
+        );
+
+        network.once("stabilizationIterationsDone", ()=>{
+            network.setOptions({
+                physics:{enabled:true, barnesHut:{damping:0.15}}
+            });
+        });
+
+        network.on("click", p=>{
+            if(p.nodes.length){
+                recommend(p.nodes[0]);
+            }
+        });
+
+        buildChart();
+        document.getElementById("status").innerText="CSV Loaded";
+    };
+
+    reader.readAsText(file);
+});
+
+// SEARCH
+function searchUser(){
+    const user=document.getElementById("search").value;
+    if(!graph[user]) return alert("User not found");
+
+    network.focus(user,{scale:1.5});
+    recommend(user);
+}
+
+// RECOMMEND 
+function recommend(user){
+
+    document.getElementById("selectedUser").innerText="Selected: "+user;
+
+    const direct = graph[user];
+    const candidates = new Set();
+
+    direct.forEach(f=>{
+        graph[f].forEach(ff=>{
+            if(ff!==user && !direct.has(ff)){
+                candidates.add(ff);
+            }
+        });
+    });
+
+    let result=[];
+
+    candidates.forEach(c=>{
+        let mutual=0;
+
+        graph[user].forEach(f=>{
+            if(graph[c].has(f)) mutual++;
+        });
+
+        let union=new Set([...graph[user],...graph[c]]);
+        let jaccard=mutual/union.size;
+
+        result.push({user:c,mutual,jaccard});
+    });
+
+    result.sort((a,b)=>b.mutual-a.mutual);
+
+    let html = `
+    <div class="tableWrap">
+    <table>
+    <tr><th>User</th><th>Mutual</th><th>Jaccard</th></tr>
+    `;
+
+    result.forEach(r=>{
+        html+=`<tr>
+        <td>${r.user}</td>
+        <td>${r.mutual}</td>
+        <td>${r.jaccard.toFixed(2)}</td>
+        </tr>`;
+    });
+
+    html += "</table></div>";
+
+    document.getElementById("result").innerHTML = html;
+
+    highlight(user, result);
+}
+
+
+function highlight(user,recs){
+
+    const recSet = new Set(recs.map(r=>r.user));
+    const direct = graph[user];
+
+    const u_m = new Set();
+    const m_r = new Set();
+    const u_r = new Set();
+
+    // 🔴 user → mutual
+    direct.forEach(m=>{
+        u_m.add(user+"-"+m);
+        u_m.add(m+"-"+user);
+    });
+
+    // 🟠 mutual → rec
+    direct.forEach(m=>{
+        graph[m].forEach(r=>{
+            if(recSet.has(r)){
+                m_r.add(m+"-"+r);
+                m_r.add(r+"-"+m);
+            }
+        });
+    });
+
+    // 🟢 user → rec
+    recSet.forEach(r=>{
+        if(graph[user].has(r)){
+            u_r.add(user+"-"+r);
+            u_r.add(r+"-"+user);
+        }
+    });
+
+    // NODES
+    nodesDS.update(nodesDS.get().map(n=>{
+        if(n.id===user) return {...n,color:"#9c0606"};
+        if(direct.has(n.id)) return {...n,color:"#f5c505"};
+        if(recSet.has(n.id)) return {...n,color:"#28ad07"};
+        return {...n,color:getColor(n.id)};
+    }));
+
+    // EDGES
+    edgesDS.update(edgesDS.get().map(e=>{
+        const key=e.from+"-"+e.to;
+
+        if(u_m.has(key)) return {...e,color:{color:"#ef4444"},width:4};
+        if(m_r.has(key)) return {...e,color:{color:"#f59f00"},width:3};
+        if(u_r.has(key)) return {...e,color:{color:"#22c55e"},width:3};
+
+        return {...e,color:{color:"#1f2937"},width:1};
+    }));
+}
+
+// CHART 
+function buildChart(){
+
+    const degreeCount={};
+
+    Object.keys(graph).forEach(u=>{
+        const d=graph[u].size;
+        degreeCount[d]=(degreeCount[d]||0)+1;
+    });
+
+    new Chart(document.getElementById("chart"),{
+        type:"bar",
+        data:{
+            labels:Object.keys(degreeCount),
+            datasets:[{
+                label:"Users",
+                data:Object.values(degreeCount),
+                backgroundColor:"rgba(34,197,94,0.7)"
+            }]
+        }
+    });
+}
+
+</script>
+
+</body>
+</html>

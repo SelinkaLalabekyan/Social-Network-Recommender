@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FAANG Social Graph (No Server)</title>
+
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body { font-family: Arial; padding: 20px; background:#f5f6fa; }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #network {
+            height: 650px;
+            border: 1px solid #ccc;
+            background: white;
+            margin-top: 20px;
+        }
+
+        #chartBox {
+            width: 320px;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        table { border-collapse: collapse; margin-top: 10px; background:white;}
+        td, th { border: 1px solid #ddd; padding: 8px; }
+    </style>
+</head>
+
+<body>
+
+<h2>🚀 FAANG Social Recommender (No Server)</h2>
+
+<input type="file" id="fileInput" />
+
+<div class="top">
+    <div>
+        <input id="search" placeholder="Enter user..." />
+        <button onclick="searchUser()">Search</button>
+
+        <div id="selectedUser">Load CSV first</div>
+        <div id="result"></div>
+    </div>
+
+    <div id="chartBox">
+        <canvas id="chart"></canvas>
+    </div>
+</div>
+
+<div id="network"></div>
+
+<script>
+
+let graph = {};
+let nodesDS, edgesDS, network, nodes=[];
+
+// 📂 LOAD FILE
+document.getElementById("fileInput").addEventListener("change", function(e){
+
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(event){
+        const text = event.target.result;
+
+        const edges = text
+            .split("\n")
+            .map(l => l.trim())
+            .filter(l => l && !l.startsWith("#"))
+            .map(l => l.split(",").map(x => x.trim()));
+
+        initGraph(edges);
+    };
+
+    reader.readAsText(file);
+});
+
+// 🔧 INIT GRAPH
+function initGraph(edges){
+
+    graph = {};
+
+    edges.forEach(([a,b])=>{
+        if(!graph[a]) graph[a]=new Set();
+        if(!graph[b]) graph[b]=new Set();
+        graph[a].add(b);
+        graph[b].add(a);
+    });
+
+    function getColor(name){
+        if(name.includes("dev")||name.includes("code")) return "#74b9ff";
+        if(name.includes("design")||name.includes("ui")) return "#fd79a8";
+        if(name.includes("crypto")) return "#ffeaa7";
+        if(name.includes("ai")||name.includes("data")) return "#55efc4";
+        if(name.includes("gamer")) return "#fab1a0";
+        if(name.includes("startup")) return "#a29bfe";
+        return "#81ecec";
+    }
+
+    nodes = Object.keys(graph).map(n=>({
+        id:n,
+        label:n,
+        value:graph[n].size * 6,
+        color:getColor(n)
+    }));
+
+    nodesDS = new vis.DataSet(nodes);
+    edgesDS = new vis.DataSet(edges.map(([a,b])=>({from:a,to:b})));
+
+    network = new vis.Network(
+        document.getElementById("network"),
+        {nodes:nodesDS, edges:edgesDS},
+        {physics:{enabled:true}}
+    );
+
+    network.on("click", params=>{
+        if(params.nodes.length){
+            recommend(params.nodes[0]);
+        }
+    });
+
+    buildChart();
+}
+
+// 🔍 SEARCH
+function searchUser(){
+    const user=document.getElementById("search").value;
+
+    if(!graph[user]) return alert("User not found");
+
+    network.focus(user,{scale:1.5});
+    recommend(user);
+}
+
+// 🔍 RECOMMENDER
+function recommend(user){
+
+    document.getElementById("selectedUser").innerHTML = "Selected: "+user;
+
+    const direct = graph[user];
+    const candidates = new Set();
+
+    direct.forEach(f=>{
+        graph[f].forEach(ff=>{
+            if(ff!==user && !direct.has(ff)){
+                candidates.add(ff);
+            }
+        });
+    });
+
+    let result=[];
+
+    candidates.forEach(c=>{
+        let mutual=0;
+
+        graph[user].forEach(f=>{
+            if(graph[c].has(f)) mutual++;
+        });
+
+        let union=new Set([...graph[user],...graph[c]]);
+        let jaccard=union.size?mutual/union.size:0;
+
+        result.push({user:c,mutual,jaccard});
+    });
+
+    result.sort((a,b)=>b.mutual-a.mutual);
+
+    let html="<table><tr><th>User</th><th>Mutual</th><th>Jaccard</th></tr>";
+
+    result.slice(0,5).forEach(r=>{
+        html+=`<tr>
+            <td>${r.user}</td>
+            <td>${r.mutual}</td>
+            <td>${r.jaccard.toFixed(2)}</td>
+        </tr>`;
+    });
+
+    html+="</table>";
+    document.getElementById("result").innerHTML=html;
+
+    highlight(user,result);
+}
+
+// 🎯 HIGHLIGHT
+function highlight(user,recs=[]){
+    const recSet=new Set(recs.map(r=>r.user));
+
+    const updated = nodes.map(n=>{
+        if(n.id===user) return {...n,color:"red"};
+        if(graph[user].has(n.id)) return {...n,color:"orange"};
+        if(recSet.has(n.id)) return {...n,color:"green"};
+        return n;
+    });
+
+    nodesDS.update(updated);
+}
+
+// 📊 ANALYTICS
+function buildChart(){
+    const degreeCount = {};
+
+    Object.keys(graph).forEach(u=>{
+        const d = graph[u].size;
+        degreeCount[d] = (degreeCount[d] || 0) + 1;
+    });
+
+    new Chart(document.getElementById("chart"), {
+        type: "bar",
+        data: {
+            labels: Object.keys(degreeCount),
+            datasets: [{
+                label: "Users by Degree",
+                data: Object.values(degreeCount)
+            }]
+        }
+    });
+}
+
+</script>
+
+</body>
+</html>
