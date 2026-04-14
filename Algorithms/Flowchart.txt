@@ -1,0 +1,29 @@
+START
+  ↓
+Load Graph (CSV)
+  ↓
+Select User
+  ↓
+User exists?
+  → NO → Error → END
+  ↓ YES
+Get Direct Friends
+  ↓
+Run BFS (max depth = 2)
+  ↓
+Filter Candidates:
+  - Not self
+  - Not already friend
+  ↓
+For each candidate:
+  → Count mutual friends
+  ↓
+Sort by score DESC
+  ↓
+Take TOP 5
+  ↓
+Display Recommendations
+  ↓
+Find Connected Components
+  ↓
+END

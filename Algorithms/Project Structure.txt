@@ -1,0 +1,22 @@
+social-recommender/
+│
+├── src/
+│   ├── core/
+│   │   ├── graph.ts
+│   │   ├── bfs.ts
+│   │   ├── metrics.ts
+│   │   ├── recommender.ts
+│   │   └── components.ts
+│   │
+│   ├── utils/
+│   │   └── csvLoader.ts
+│   │
+│   ├── cli.ts
+│   └── index.ts
+│
+├── data/
+│   └── network.csv
+│
+├── package.json
+├── tsconfig.json
+└── README.md
