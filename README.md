@@ -10,6 +10,8 @@ The objective of this project is to design and implement a friend recommendation
 To achieve this, the social network is represented as an adjacency list-based graph. The system explores the network structure using the Breadth-First Search (BFS) algorithm to identify users within two levels of connection (friends-of-friends). Among these candidates, only users who are not already directly connected to the target user are considered.
 Each candidate is then evaluated based on the number of mutual friends shared with the target user. The candidates are ranked in descending order of this score, and the top five recommendations are returned. Additionally, the system analyzes the overall structure of the network by detecting connected components, which represent isolated groups of users.
 This project demonstrates how classical graph algorithms can be applied to solve real-world problems in social networks, providing both efficient and interpretable recommendation results.
+
+
 1.2 Functional Requirements
 The system must satisfy the following functional requirements:
 • The system must load a social network dataset from a CSV file, where each line represents a connection between two users.
@@ -24,6 +26,8 @@ The system must satisfy the following functional requirements:
 • The system must detect and display all connected components within the graph.
 • The system must provide an alternative similarity measure (Jaccard similarity) for comparison purposes.
 • The system must display results in a clear and structured format through a command-line interface.
+
+
 
 1.3 Non-Functional Requirements
 In addition to functional requirements, the system must satisfy several non-functional requirements to ensure efficiency, scalability, and usability.
@@ -57,6 +61,8 @@ Finally, only the top five candidates are returned as recommendations, ensuring 
 
 
 2. Conceptual Design Explanation
+
+   
 2.1 Social Network as a Graph
 In this project, the social network is modeled using concepts from graph theory. A graph is a mathematical structure consisting of a set of nodes (also called vertices) and edges that connect pairs of nodes.
 In the context of this system, each node represents a user, and each edge represents a friendship between two users. Since friendships are mutual, the graph is considered undirected, meaning that if user A is connected to user B, then user B is also connected to user A.
@@ -64,7 +70,8 @@ The graph is implemented using an adjacency list representation. In this structu
 The adjacency list structure allows for efficient storage and fast lookup of user connections, which is essential for performing graph traversal and computing recommendations.
 
 
-                 Figure 1: Example of Social Network Graph Representation
+
+                
 2.2 System Architecture Overview
 The system is designed in a modular way, where each component is responsible for a specific functionality. This modular architecture improves code readability, maintainability, and scalability.
 The core components of the system include:
@@ -87,6 +94,8 @@ This layered design ensures a clear separation of concerns, allowing each part o
 
 
 2.3 Data Representation and Input Format
+
+
 
 The input data for the system is provided in the form of a CSV file, where each line represents a connection between two users in the network. Each entry follows a simple format:
 UserA, UserB
@@ -112,6 +121,7 @@ quant_leader,logic_architect
 pixel_artist,logic_thinker
 core_explorer,ux_leader
 
+
 2.4 Design Decisions and Justification
 
 Several design decisions were made during the development of this system to ensure efficiency and clarity.
@@ -128,6 +138,8 @@ Finally, a command-line interface was chosen for simplicity and ease of use. Whi
 
 
 3. Algorithms and Implementation
+
+   
 3.1 Graph Representation
 
 The foundation of the system is the graph data structure used to represent the social network. The graph is implemented using an adjacency list, where each user is associated with a set of their direct connections.
@@ -158,7 +170,8 @@ The algorithm uses a queue to process nodes in a first-in, first-out (FIFO) mann
 A level counter is maintained to limit the traversal depth to two. Once this limit is reached, the algorithm stops exploring further nodes. The result of this process is a set of users that are reachable within two hops from the target user.
 This approach is efficient and well-suited for recommendation systems, as it focuses only on nearby nodes in the graph, which are more likely to be relevant.
 
-                                  Figure 2: BFS Diagram
+                                
+
 
 3.3 Recommendation Algorithm
 The recommendation process is built on top of the results obtained from the BFS traversal. Once the set of users within two hops is identified, the system applies a filtering and ranking procedure to generate meaningful recommendations.
@@ -174,6 +187,8 @@ This method ensures that recommendations are both relevant and interpretable, as
 
 
 3.4 Mutual Friend Calculation
+
+
 The number of mutual friends between two users is a key metric used to evaluate the strength of a potential recommendation. In this system, mutual friends are defined as users who are directly connected to both the target user and the candidate user.
 To compute this value, the system retrieves the set of friends for each user and performs a comparison to identify common elements. This is effectively equivalent to computing the intersection of two sets.
 The implementation iterates through one set and checks whether each element exists in the other set. For each match, a counter is incremented. The final count represents the total number of mutual friends.
@@ -197,21 +212,7 @@ The Jaccard similarity is defined as the ratio of the number of common elements 
 This metric provides a normalized score between 0 and 1, where a higher value indicates a greater degree of similarity. Unlike the mutual friend count, which only considers the number of shared connections, the Jaccard similarity also accounts for the total number of connections, providing a more balanced evaluation.
 The inclusion of this metric allows for comparison between different recommendation strategies and enhances the analytical capabilities of the system.
 
-                           Figure 3: Jaccard Similarity Illustration 
-
-                            Figure 4: Jaccard Similarity Illustration (formulas)
-
-
-
-
-
-
-
-
-
-
-
-
+                       
 
 
 
@@ -221,9 +222,14 @@ The system uses a BFS-based approach to identify these components. It iterates t
 Each discovered group is stored as a separate list, and the process continues until all users have been visited. The result is a collection of connected components that represent isolated clusters within the network.
 This analysis provides insight into the structure of the network, such as identifying isolated users or communities.
                  
-                                Figure 5: Connected Components in the Graph
+                               
+
+                                
 
 4. Dataset Description
+
+
+   
 4.1 Dataset Overview
 The dataset used in this project represents a social network in the form of user-to-user connections. It is stored as a CSV file, where each line defines a friendship relationship between two users.
 Each entry follows a simple format consisting of two user identifiers separated by a comma. This format allows for easy parsing and efficient construction of the graph structure during the loading phase.
@@ -238,13 +244,11 @@ This dataset serves as the foundation for building the graph and performing all 
 
 
 
-
-
-
 4.2 Data Format
 The input data is organized in a plain text CSV format, where each line represents a bidirectional friendship between two users. The format is as follows:
 UserA, UserB
 This indicates that UserA is connected to UserB, and vice versa. During the loading process, the system ensures that this relationship is stored symmetrically in the graph.
+
 
 4.3 Data Loading Process
 
@@ -258,6 +262,8 @@ This process continues until the entire file is read, resulting in a fully const
 
 
 5. System Workflow
+
+
 5.1 Workflow Description
 
 The overall workflow of the system follows a structured sequence of steps that transform raw input data into meaningful friend recommendations.
@@ -284,6 +290,8 @@ This structured approach ensures that the system remains efficient, modular, and
 
 
 6. Testing and Edge Cases
+
+   
 6.1 Edge Case Handling
 To ensure robustness and reliability, the system has been designed to handle several important edge cases that may arise during execution.
 First, the system checks whether the selected user exists in the graph. If the user is not found, the recommendation process is terminated gracefully, and no results are returned.
@@ -291,6 +299,9 @@ Second, the system handles cases where a user has no friends. In such situations
 Third, the system accounts for fully connected graphs, where every user is already connected to every other user. In this case, there are no valid candidates for recommendation, and the system returns an empty result set.
 Additionally, the system avoids self-recommendation by explicitly excluding the target user from the candidate list. It also ensures that duplicate candidates are not processed multiple times by using set-based data structures.
 These measures ensure that the system behaves predictably and correctly under a wide range of input conditions.
+
+
+
 6.2 Testing Strategy
 
 The system was tested using both small and large datasets to validate correctness and performance.
@@ -310,33 +321,46 @@ For a given input user, the system outputs a list of recommended users along wit
 
 
 
-            Figure 6: Recommendation Output in Command-Line Interface
+           
 
 
 7.2 Connected Components Output
 In addition to recommendations, the system displays the connected components of the graph. Each component is presented as a group of users, indicating clusters within the social network.
 This output provides insight into the structure of the network and helps identify isolated groups or communities.
+
+
+
 8. Complexity Analysis
+
+   
 8.1 BFS Complexity
 The Breadth-First Search (BFS) algorithm operates with a time complexity of O(V + E), where V represents the number of users (vertices) and E represents the number of connections (edges).
 This efficiency is achieved because each node and each edge is processed at most once during the traversal. The space complexity is O(V), as the algorithm maintains a queue and a visited set.
 
 8.2 Mutual Friend Calculation
+
+
 The computation of mutual friends between two users involves comparing their respective sets of neighbors. This operation has a time complexity proportional to the size of the smaller set, typically denoted as O(d), where d is the degree of a user.
 Thanks to the use of hash-based sets, membership checks are performed in constant time on average, making this operation efficient in practice.
 
 8.3 Recommendation Algorithm Complexity
+
+
 The overall complexity of the recommendation process includes BFS traversal, candidate filtering, mutual friend computation, and sorting.
 The BFS traversal takes O(V + E) time. The mutual friend calculations depend on the number of candidates and their degrees. Finally, sorting the candidates requires O(n log n), where n is the number of candidates.
 In practice, since the number of candidates is limited to users within two hops, the algorithm remains efficient even for moderately large networks.
 
 9. Results and Discussion
+
+    
 9.1 Results
 
 The system successfully generates friend recommendations based on mutual connections within the social network. The results demonstrate that users with a higher number of shared friends are prioritized, leading to meaningful and intuitive suggestions.
 The inclusion of Jaccard similarity provides an additional perspective, allowing for comparison between absolute and normalized similarity measures.
 
 9.2 Discussion	
+
+
 The results indicate that the mutual friend approach is effective for generating relevant recommendations in small to medium-sized networks. It is simple, interpretable, and computationally efficient.
 However, the method has limitations. It does not consider additional factors such as user interests, activity levels, or interaction frequency. Future improvements could incorporate more advanced techniques, such as weighted graphs or machine learning-based recommendation models.
 Despite these limitations, the system provides a solid foundation for understanding graph-based recommendation systems.
@@ -346,6 +370,8 @@ Despite these limitations, the system provides a solid foundation for understand
 
 
 10. Conclusion
+
+    
 This project demonstrates the application of graph theory and algorithm design in solving a real-world problem: friend recommendation in social networks.
 By modeling the network as an undirected graph and applying Breadth-First Search, the system efficiently identifies relevant candidates within a limited neighborhood. The use of mutual friend counts provides a simple yet effective ranking mechanism, while the inclusion of Jaccard similarity enhances the analytical capabilities of the system.
 The modular design of the system ensures clarity and maintainability, and the implementation successfully handles various edge cases. Additionally, the analysis of connected components offers valuable insight into the structure of the network.
