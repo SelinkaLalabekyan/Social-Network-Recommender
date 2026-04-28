@@ -1,5 +1,4 @@
-https://docs.google.com/document/d/16X5Xgm3pj_vIk31I2iXi7CjovtsY45AfY4RN8E5Y14Y/edit?tab=t.0
-
+https://docs.google.com/document/d/16X5Xgm3pj_vIk31I2iXi7CjovtsY45AfY4RN8E5Y14Y/edit?usp=sharing
 
 1. Problem Description and Requirements Analysis
 
